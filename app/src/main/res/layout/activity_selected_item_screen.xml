@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".SelectedItemScreen">
+
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="626dp"
+        android:orientation="vertical"
+        android:paddingTop="100dp">
+
+        <ImageView
+            android:id="@+id/selectedItemImage"
+            android:layout_width="182dp"
+            android:layout_height="182dp"
+            tools:srcCompat="@tools:sample/backgrounds/scenic" />
+
+        <Switch
+            android:id="@+id/switch1"
+            android:layout_width="252dp"
+            android:layout_height="77dp"
+            android:text="Get Notifications" />
+
+        <TextView
+            android:id="@+id/itemName"
+            android:layout_width="match_parent"
+            android:layout_height="53dp" />
+
+        <TextView
+            android:id="@+id/itemDescription"
+            android:layout_width="match_parent"
+            android:layout_height="163dp" />
+
+
+    </LinearLayout>
+
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

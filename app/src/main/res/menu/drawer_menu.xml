@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:showIn="navigation_view"
+    >
+    <group android:checkableBehavior="single">
+        <item android:id="@+id/nav_shows"
+            android:icon="@drawable/ic_baseline_slideshow_24"
+            android:title="My Shows"/>
+
+        <item android:id="@+id/nav_artists"
+            android:icon="@drawable/ic_baseline_record_voice_over_24"
+            android:title="My Artists"/>
+
+
+
+        <item android:id="@+id/showLog"
+            android:icon="@drawable/ic_baseline_psychology_24"
+            android:title="Show Log"/>
+
+
+        <item android:id="@+id/about"
+            android:icon="@drawable/ic_baseline_info_24"
+            android:title="About"/>
+
+    </group>
+</menu>

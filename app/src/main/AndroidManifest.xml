@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.dvir.spotification">
+
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <!-- Internet Permission -->
+    <uses-permission android:name="android.permission.INTERNET" />
+
+    <application
+        android:allowBackup="true"
+        android:icon="@mipmap/aaa111"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/aaa111_round"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.Spotification">
+
+        <!--
+               Set to true if your app is Standalone, that is, it does not require the handheld
+               app to run.
+        -->
+
+        <activity
+            android:name=".MyCollection"
+            android:label="@string/title_activity_my_collection">
+
+        </activity>
+        <activity android:name=".printAllData" />
+        <activity
+            android:name=".SelectedItemScreen"
+            android:label="@string/title_activity_selected_item_screen"
+            android:theme="@style/Theme.Spotification.NoActionBar" />
+
+        <activity
+            android:name=".MainActivity"
+            android:theme="@style/Theme.Spotification.NoActionBar">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <meta-data
+            android:name="com.google.android.gms.ads.APPLICATION_ID"
+            android:value="ca-app-pub-3940256099942544~3347511713"/>
+
+        <!-- real id = ca-app-pub-1171969261272427~2606889379 TBD!!!-->
+
+    </application>
+
+</manifest>
