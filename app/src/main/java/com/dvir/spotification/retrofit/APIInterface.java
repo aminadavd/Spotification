@@ -30,6 +30,10 @@ public interface APIInterface {
     @GET("/v1/search")
     Call<JsonObject> searchSpotifyReturnJson(@Header("Authorization") String token, @Query("q") String query, @Query("type") String type, @Query("limit") String limit);
 
+    @GET("/v1/artists/{id}/albums")
+    Call<Albums> searchAlbums(@Header("Authorization") String token, @Path("id") String id,  @Query("limit") String limit,  @Query("market") String market);
+
+
 
     @FormUrlEncoded
   @POST("/api/token")

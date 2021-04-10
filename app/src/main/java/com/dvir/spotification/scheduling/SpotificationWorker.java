@@ -4,6 +4,7 @@ import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
+import android.widget.ListView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -14,10 +15,13 @@ import androidx.work.WorkerParameters;
 
 import com.dvir.spotification.MainActivity;
 import com.dvir.spotification.R;
+import com.dvir.spotification.SearchResultsListAdapter;
+import com.dvir.spotification.SelectedItemScreen;
 import com.dvir.spotification.note.Item;
 import com.dvir.spotification.note.NoteUtil;
 import com.dvir.spotification.note.SpotifyItemPOJO;
 import com.dvir.spotification.retrofit.APIInterface;
+import com.dvir.spotification.retrofit.Albums;
 import com.dvir.spotification.retrofit.Episodes;
 import com.dvir.spotification.retrofit.ResponseJson;
 import com.dvir.spotification.spotify.SpotifyUtil;
@@ -105,44 +109,87 @@ public class SpotificationWorker extends Worker {
                 String id = item.getItemId();
                 long latest = item.getLastUpdateDate();
                 String lastEpisodeId = item.getLastEpisodeId();
-                Call<Episodes> call1 = apiInterface1.searchEpisodes("Bearer " + accessToken, id, "1", "US"); // TBD - put all markets
-                call1.enqueue(new Callback<Episodes>() {
-                    @Override
-                    public void onResponse(Call<Episodes> call, Response<Episodes> response) {
-                        Episodes episodes = response.body();
-                        Episodes.Episode episode1 = episodes.getItemsList().get(0);
-                        String dateString = episode1.getReleaseDate();
-                        String episodeId = episode1.getId();
-                        try {
-                            Date date = new SimpleDateFormat("yyyy-MM-dd").parse(dateString);
-                            long episodeDate = date.getTime();
+                if (item.getType().equals("show")) {
+                    Call<Episodes> call1 = apiInterface1.searchEpisodes("Bearer " + accessToken, id, "1", "US"); // TBD - put all markets
+                    call1.enqueue(new Callback<Episodes>() {
+                        @Override
+                        public void onResponse(Call<Episodes> call, Response<Episodes> response) {
+                            Episodes episodes = response.body();
+                            if (episodes!= null) {
+                                Episodes.Episode episode1 = episodes.getItemsList().get(0);
+                                String dateString = episode1.getReleaseDate();
+                                String episodeId = episode1.getId();
+                                try {
+                                    Date date = new SimpleDateFormat("yyyy-MM-dd").parse(dateString);
+                                    long episodeDate = date.getTime();
 
-                            if (latest == 0) {
-                                item.setLastUpdateDate(episodeDate);
-                                item.setLastEpisodeId(episodeId);
-                                NoteUtil.replaceOne(getApplicationContext(), item);
-                            } else if (episodeDate > latest || !episodeId.equals(lastEpisodeId)) {
-                                sendPush(episode1.getUri(), item.getName(), episode1.getName());
-                                item.setLastUpdateDate(episodeDate);
-                                item.setLastEpisodeId(episodeId);
-                                NoteUtil.replaceOne(getApplicationContext(), item);
-                                //Toast.makeText(getApplicationContext(), "Succccessssssssss", Toast.LENGTH_LONG).show();
+                                    if (latest == 0) {
+                                        item.setLastUpdateDate(episodeDate);
+                                        item.setLastEpisodeId(episodeId);
+                                        NoteUtil.replaceOne(getApplicationContext(), item);
+                                    } else if (episodeDate > latest || !episodeId.equals(lastEpisodeId)) {
+                                        sendPush(episode1.getUri(), item.getName(), episode1.getName());
+                                        item.setLastUpdateDate(episodeDate);
+                                        item.setLastEpisodeId(episodeId);
+                                        NoteUtil.replaceOne(getApplicationContext(), item);
+                                        //Toast.makeText(getApplicationContext(), "Succccessssssssss", Toast.LENGTH_LONG).show();
+                                    }
+
+                                } catch (ParseException e) {
+                                    e.printStackTrace();
+                                }
                             }
 
-                        } catch (ParseException e) {
-                            e.printStackTrace();
                         }
 
-                    }
+                        @Override
+                        public void onFailure(Call<Episodes> call, Throwable t) {
+                            call.cancel();
+                            updatedItemList.add(item);
 
-                    @Override
-                    public void onFailure(Call<Episodes> call, Throwable t) {
-                        call.cancel();
-                        updatedItemList.add(item);
+                        }
+                    });
+                } else if (item.getType().equals("artist")){
+                    Call<Albums> call1 = apiInterface1.searchAlbums("Bearer " + accessToken, id, "1", "US"); // TBD - put all markets
+                    call1.enqueue(new Callback<Albums>() {
+                        @Override
+                        public void onResponse(Call<Albums> call, Response<Albums> response) {
+                            Albums albums = response.body();
+                            if (albums!= null) {
+                                Albums.Album album = albums.getItemsList().get(0);
+                                String dateString = album.getReleaseDate();
+                                String episodeId = album.getId();
+                                try {
+                                    Date date = new SimpleDateFormat("yyyy-MM-dd").parse(dateString);
+                                    long episodeDate = date.getTime();
 
-                    }
-                });
+                                    if (latest == 0) {
+                                        item.setLastUpdateDate(episodeDate);
+                                        item.setLastEpisodeId(episodeId);
+                                        NoteUtil.replaceOne(getApplicationContext(), item);
+                                    } else if (episodeDate > latest || !episodeId.equals(lastEpisodeId)) {
+                                        sendPush(album.getUri(), item.getName(), album.getName());
+                                        item.setLastUpdateDate(episodeDate);
+                                        item.setLastEpisodeId(episodeId);
+                                        NoteUtil.replaceOne(getApplicationContext(), item);
+                                        //Toast.makeText(getApplicationContext(), "Succccessssssssss", Toast.LENGTH_LONG).show();
+                                    }
 
+                                } catch (ParseException e) {
+                                    e.printStackTrace();
+                                }
+                            }
+                        }
+
+                        @Override
+                        public void onFailure(Call<Albums> call, Throwable t) {
+                            call.cancel();
+
+
+                        }
+                    });
+
+                }
             }
 
         }
@@ -160,20 +207,24 @@ public class SpotificationWorker extends Worker {
 
         NotificationCompat.Builder builder = new NotificationCompat.Builder(getApplicationContext(), CHANNEL_ID)
                 .setSmallIcon(R.mipmap.aaa111)
-                .setContentTitle("New episode is available!")
-                .setContentText(showName + ": " + episodeName)
+               // .setContentTitle("New episode is available!")
+                .setContentTitle(showName)
+                .setContentText(episodeName)
                 .setStyle(new NotificationCompat.BigTextStyle()
                         //       .bigText("Push to open in Spotify"))
-                        .bigText(showName + ": " + episodeName))
+       //                 .bigText(showName + ": " + episodeName))
+                        .bigText(episodeName))
                 .setContentIntent(pendingIntent)
                 .addAction(R.drawable.spotification_background, "PLAY IN SPOTIFY",
                         pendingIntent)
-                .setPriority(NotificationCompat.PRIORITY_DEFAULT);
+                .setPriority(NotificationCompat.PRIORITY_HIGH);
+
 
         NotificationManagerCompat notificationManager = NotificationManagerCompat.from(getApplicationContext());
         Random random = new Random();
         int id = random.nextInt();
         notificationManager.notify(id, builder.build());
+
 
 
     }

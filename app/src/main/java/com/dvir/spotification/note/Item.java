@@ -22,6 +22,17 @@ public class Item {
     @SerializedName("last_episode_id")
     public String lastEpisodeId;
 
+    @SerializedName("description")
+    public String description;
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
     public String getLastEpisodeId() {
         return lastEpisodeId;
     }

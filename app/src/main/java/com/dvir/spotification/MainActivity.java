@@ -3,6 +3,7 @@ package com.dvir.spotification;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.ActionBarDrawerToggle;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.app.AppCompatDelegate;
 import androidx.core.app.NotificationCompat;
 import androidx.core.view.GravityCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
@@ -27,13 +28,17 @@ import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
+import android.widget.SearchView;
 import android.widget.Toast;
 
 import androidx.appcompat.widget.Toolbar;
 
+import com.bumptech.glide.Glide;
 import com.dvir.spotification.note.NoteUtil;
 import com.dvir.spotification.retrofit.APIInterface;
 import com.dvir.spotification.retrofit.ArtistJson;
@@ -41,8 +46,10 @@ import com.dvir.spotification.retrofit.ResponseJson;
 import com.dvir.spotification.retrofit.ShowsJson;
 
 import com.dvir.spotification.scheduling.SchedulingUtil;
+import com.google.android.gms.ads.AdListener;
 import com.google.android.gms.ads.AdRequest;
 import com.google.android.gms.ads.AdView;
+import com.google.android.gms.ads.LoadAdError;
 import com.google.android.gms.ads.MobileAds;
 import com.google.android.gms.ads.initialization.InitializationStatus;
 import com.google.android.gms.ads.initialization.OnInitializationCompleteListener;
@@ -76,8 +83,11 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     private DrawerLayout drawer;
     private AdView mAdView;
 
+
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES);
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
@@ -97,12 +107,42 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         MobileAds.initialize(this, new OnInitializationCompleteListener() {
             @Override
             public void onInitializationComplete(InitializationStatus initializationStatus) {
+
             }
         });
 
         mAdView = findViewById(R.id.adView);
         AdRequest adRequest = new AdRequest.Builder().build();
         mAdView.loadAd(adRequest);
+
+        mAdView.setAdListener(new AdListener() {
+            @Override
+            public void onAdLoaded() {
+                // Code to be executed when an ad finishes loading.
+            }
+
+            @Override
+            public void onAdFailedToLoad(LoadAdError adError) {
+                LinearLayout linearLayout = findViewById(R.id.linLayoutMain);
+                linearLayout.removeView(mAdView);
+            }
+            @Override
+            public void onAdOpened() {
+                // Code to be executed when an ad opens an overlay that
+                // covers the screen.
+            }
+            @Override
+            public void onAdClicked() {
+                // Code to be executed when the user clicks on an ad.
+            }
+            @Override
+            public void onAdClosed() {
+                // Code to be executed when the user is about to return
+                // to the app after tapping on an ad.
+            }
+        });
+
+
 
 //
 //        AuthenticationRequest.Builder builder =
@@ -148,132 +188,322 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         });
 
 
+        SearchView searchView = (SearchView) findViewById(R.id.searchText);
 
+        searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
+            @Override
+            public boolean onQueryTextSubmit(String query) {
+                searchInSpotify(query);
+                return false;
+            }
 
+            @Override
+            public boolean onQueryTextChange(String newText) {
 
-        final Button searchButton = (Button) findViewById(R.id.searchButton);
-        searchButton.setOnClickListener(new View.OnClickListener() {
-
-
-            public void onClick(View v) {
-
-                EditText searchTextBox = (EditText) findViewById(R.id.searchText);
-                String searchText = searchTextBox.getText().toString();
-                if (!searchText.isEmpty()) {
-                    RadioGroup rg =  findViewById(R.id.typeGroup);//radioGroup.getCheckedRadioButtonId()
-                    int typeId = rg.getCheckedRadioButtonId();
-                    String qType = ((typeId == R.id.radio_show) ? "show" : "artist");
-
-                    InputMethodManager inputMethodManager = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
-                    inputMethodManager.hideSoftInputFromWindow(v.getApplicationWindowToken(), 0);
-                    Retrofit retrofit = new Retrofit.Builder()
-                            .baseUrl(SPOTIFY_BASE_API)
-                            .addConverterFactory(GsonConverterFactory.create())
-                            .build();
-                    APIInterface apiInterface1 = retrofit.create(APIInterface.class);
-
-//                    Call<ShowsJson> call = apiInterface1.searchSpotify("Bearer " + accessToken, searchText, "show", "10" );
-                    //Call<ShowsJson> call = apiInterface1.searchSpotify("Bearer " + accessToken, searchText, "show", "20", "US");
-                    if (qType.equals("show")) {
-                        Call<ShowsJson> call = apiInterface1.searchSpotify("Bearer " + accessToken, searchText, qType, "20", "US");
-                        call.enqueue(new Callback<ShowsJson>() {
-                            @Override
-                            public void onResponse(Call<ShowsJson> call, Response<ShowsJson> response) {
-                                ShowsJson shows = response.body();
-                                ListView listView = findViewById(R.id.resList);
-
-                                items = shows.getShows().getItemsList();
-                                List<String> images = new ArrayList<>();
-                                List<String> namesList = new ArrayList<>();
-                                for (ShowsJson.Shows.Item item : items) {
-
-                                    String urlString = item.getImageList().get(1).getUrl();
-                                    images.add(urlString);
-                                    namesList.add(item.getName());
-                                }
-                                SearchResultsListAdapter adapter = new SearchResultsListAdapter(MainActivity.this, images, namesList);
-                                listView.setAdapter(adapter);
-                                listView.setOnItemClickListener((parent, view, position, id) -> {
-                                    Intent intent = new Intent(view.getContext(), SelectedItemScreen.class);
-                                    ShowsJson.Shows.Item item = items.get(position);
-
-                                    String[] selectedItemValues = new String[5];
-
-                                    selectedItemValues[0] = item.getName();
-                                    selectedItemValues[1] = item.getDescription();
-                                    selectedItemValues[2] = item.getImageList().get(1).getUrl();
-                                    selectedItemValues[3] = item.getId();
-                                    selectedItemValues[4] = "show";
-
-                                    intent.putExtra("selectedItemValues", selectedItemValues);
-                                    startActivity(intent);
-                                });
-                            }
-
-
-                            @Override
-                            public void onFailure(Call<ShowsJson> call, Throwable t) {
-                                call.cancel();
-
-                            }
-                        });
-                    } else if (qType.equals("artist")) {
-                        Call<ArtistJson> call = apiInterface1.searchForArtist("Bearer " + accessToken, searchText, qType, "10", "US");
-                        call.enqueue(new Callback<ArtistJson>() {
-                            @Override
-                            public void onResponse(Call<ArtistJson> call, Response<ArtistJson> response) {
-                                ArtistJson artistJson = response.body();
-                                ListView listView = findViewById(R.id.resList);
-
-                                artistItems  = artistJson.getArtists().getItemsList();
-                                List<String> images = new ArrayList<>();
-                                List<String> namesList = new ArrayList<>();
-                                for (ArtistJson.Artist.ArtistItem item : artistItems) {
-                                    String urlString = "" ;
-                                    if (item.getImageList() != null && item.getImageList().size() > 1) {
-                                        urlString = item.getImageList().get(1).getUrl();
-                                    } else if (item.getImageList().size() == 1) {
-                                        urlString = item.getImageList().get(0).getUrl();
-                                    } else {// TBD - no image found
-
-                                    }
-
-                                    images.add(urlString);
-                                    namesList.add(item.getName());
-                                }
-                                SearchResultsListAdapter adapter = new SearchResultsListAdapter(MainActivity.this, images, namesList);
-                                listView.setAdapter(adapter);
-                                listView.setOnItemClickListener((parent, view, position, id) -> {
-                                    Intent intent = new Intent(view.getContext(), SelectedItemScreen.class);
-                                    ArtistJson.Artist.ArtistItem item = artistItems.get(position);
-
-                                    String[] selectedItemValues = new String[5];
-
-                                    selectedItemValues[0] = item.getName();
-                                    selectedItemValues[1] = "";
-                                    selectedItemValues[2] = item.getImageList().get(1).getUrl();
-                                    selectedItemValues[3] = item.getId();
-                                    selectedItemValues[4] = "artist";
-
-                                    intent.putExtra("selectedItemValues", selectedItemValues);
-                                    startActivity(intent);
-                                });
-                            }
-
-
-                            @Override
-                            public void onFailure(Call<ArtistJson> call, Throwable t) {
-                                call.cancel();
-
-                            }
-                        });
-
-                    }
-                }
+                return false;
             }
         });
 
+//        final Button searchButton = (Button) findViewById(R.id.searchButton);
+//        searchButton.setOnClickListener(new View.OnClickListener() {
+
+//            public void onClick(View v) {
+//
+//                ImageView gif = findViewById(R.id.gifPlaceMain);
+//            if (gif != null) {
+//                gif.setVisibility(View.VISIBLE);
+//                Glide.with(MainActivity.this)
+//                        .load(R.raw.loading)
+//                        //.load("https://media.giphy.com/media/98uBZTzlXMhkk/giphy.gif")
+//                        .into(gif);
+//            }
+//
+////            LinearLayout linearLayout = findViewById(R.id.linLayout);
+////                      linearLayout.removeView(imageView);
+////                      listView.setVisibility(View.VISIBLE);
+////                EditText searchTextBox = (EditText) findViewById(R.id.searchText);
+//                String searchText = simpleSearchView.get
+//                if (!searchText.isEmpty()) {
+//                    RadioGroup rg =  findViewById(R.id.typeGroup);//radioGroup.getCheckedRadioButtonId()
+//                    int typeId = rg.getCheckedRadioButtonId();
+//                    String qType = ((typeId == R.id.radio_show) ? "show" : "artist");
+//
+//                    InputMethodManager inputMethodManager = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
+//                    inputMethodManager.hideSoftInputFromWindow(v.getApplicationWindowToken(), 0);
+//                    Retrofit retrofit = new Retrofit.Builder()
+//                            .baseUrl(SPOTIFY_BASE_API)
+//                            .addConverterFactory(GsonConverterFactory.create())
+//                            .build();
+//                    APIInterface apiInterface1 = retrofit.create(APIInterface.class);
+//
+////                    Call<ShowsJson> call = apiInterface1.searchSpotify("Bearer " + accessToken, searchText, "show", "10" );
+//                    //Call<ShowsJson> call = apiInterface1.searchSpotify("Bearer " + accessToken, searchText, "show", "20", "US");
+//                    if (qType.equals("show")) {
+//                        Call<ShowsJson> call = apiInterface1.searchSpotify("Bearer " + accessToken, searchText, qType, "50", "US");
+//                        call.enqueue(new Callback<ShowsJson>() {
+//                            @Override
+//                            public void onResponse(Call<ShowsJson> call, Response<ShowsJson> response) {
+//                                ShowsJson shows = response.body();
+//                                ListView listView = findViewById(R.id.resList);
+//
+//                                items = shows.getShows().getItemsList();
+//                                List<String> images = new ArrayList<>();
+//                                List<String> namesList = new ArrayList<>();
+//                                for (ShowsJson.Shows.Item item : items) {
+//
+//                                    String urlString = item.getImageList().get(1).getUrl();
+//                                    images.add(urlString);
+//                                    namesList.add(item.getName());
+//                                }
+//                                SearchResultsListAdapter adapter = new SearchResultsListAdapter(MainActivity.this, images, namesList);
+//                                listView.setAdapter(adapter);
+//
+//                                listView.setOnItemClickListener((parent, view, position, id) -> {
+//                                    Intent intent = new Intent(view.getContext(), SelectedItemScreen.class);
+//                                    ShowsJson.Shows.Item item = items.get(position);
+//
+//                                    String[] selectedItemValues = new String[6];
+//
+//                                    selectedItemValues[0] = item.getName();
+//                                    selectedItemValues[1] = item.getDescription();
+//                                    selectedItemValues[2] = item.getImageList().get(1).getUrl();
+//                                    selectedItemValues[3] = item.getId();
+//                                    selectedItemValues[4] = "show";
+//                                    selectedItemValues[5] = accessToken;
+//
+//                                    intent.putExtra("selectedItemValues", selectedItemValues);
+//                                    startActivity(intent);
+//                                });
+//
+//                                ImageView imageView = findViewById(R.id.gifPlaceMain);
+//                                if (imageView != null) {
+//                                    imageView.setVisibility(View.INVISIBLE);
+//                                    LinearLayout linearLayout = findViewById(R.id.linLayoutMain);
+//                                    linearLayout.removeView(imageView);
+//                                }
+//                                listView.setVisibility(View.VISIBLE);
+//                            }
+//
+//
+//                            @Override
+//                            public void onFailure(Call<ShowsJson> call, Throwable t) {
+//                                call.cancel();
+//
+//                            }
+//                        });
+//                    } else if (qType.equals("artist")) {
+//                        Call<ArtistJson> call = apiInterface1.searchForArtist("Bearer " + accessToken, searchText, qType, "20", "US");
+//                        call.enqueue(new Callback<ArtistJson>() {
+//                            @Override
+//                            public void onResponse(Call<ArtistJson> call, Response<ArtistJson> response) {
+//                                ArtistJson artistJson = response.body();
+//                                ListView listView = findViewById(R.id.resList);
+//
+//                                artistItems  = artistJson.getArtists().getItemsList();
+//                                List<String> images = new ArrayList<>();
+//                                List<String> namesList = new ArrayList<>();
+//                                for (ArtistJson.Artist.ArtistItem item : artistItems) {
+//                                    String urlString = "" ;
+//                                    if (item.getImageList() != null && item.getImageList().size() > 1) {
+//                                        urlString = item.getImageList().get(1).getUrl();
+//                                    } else if (item.getImageList().size() == 1) {
+//                                        urlString = item.getImageList().get(0).getUrl();
+//                                    } else {// TBD - no image found
+//
+//                                    }
+//
+//                                    images.add(urlString);
+//                                    namesList.add(item.getName());
+//                                }
+//                                SearchResultsListAdapter adapter = new SearchResultsListAdapter(MainActivity.this, images, namesList);
+//                                listView.setAdapter(adapter);
+//                                listView.setOnItemClickListener((parent, view, position, id) -> {
+//                                    Intent intent = new Intent(view.getContext(), SelectedItemScreen.class);
+//                                    ArtistJson.Artist.ArtistItem item = artistItems.get(position);
+//
+//                                    String[] selectedItemValues = new String[6];
+//
+//                                    selectedItemValues[0] = item.getName();
+//                                    selectedItemValues[1] = "";
+//                                    selectedItemValues[2] = item.getImageList().get(1).getUrl();
+//                                    selectedItemValues[3] = item.getId();
+//                                    selectedItemValues[4] = "artist";
+//                                    selectedItemValues[5] = accessToken;
+//                                    intent.putExtra("selectedItemValues", selectedItemValues);
+//                                    startActivity(intent);
+//                                });
+//                                ImageView imageView = findViewById(R.id.gifPlaceMain);
+//                                if (imageView != null) {
+//                                    imageView.setVisibility(View.INVISIBLE);
+//                                    LinearLayout linearLayout = findViewById(R.id.linLayoutMain);
+//                                    linearLayout.removeView(imageView);
+//
+//                                }
+//                                listView.setVisibility(View.VISIBLE);
+//                            }
+//
+//
+//                            @Override
+//                            public void onFailure(Call<ArtistJson> call, Throwable t) {
+//                                call.cancel();
+//
+//                            }
+//                        });
+//
+//                    }
+//                }
+//            }
+//        });
+
     }
+
+    private void searchInSpotify (String searchText) {
+        SearchView searchView = (SearchView) findViewById(R.id.searchText);
+        ImageView gif = findViewById(R.id.gifPlaceMain);
+        if (gif != null) {
+            gif.setVisibility(View.VISIBLE);
+            Glide.with(MainActivity.this)
+                    .load(R.raw.loading)
+                    //.load("https://media.giphy.com/media/98uBZTzlXMhkk/giphy.gif")
+                    .into(gif);
+        }
+
+//            LinearLayout linearLayout = findViewById(R.id.linLayout);
+//                      linearLayout.removeView(imageView);
+//                      listView.setVisibility(View.VISIBLE);
+//                EditText searchTextBox = (EditText) findViewById(R.id.searchText);
+
+        if (!searchText.isEmpty()) {
+            RadioGroup rg =  findViewById(R.id.typeGroup);//radioGroup.getCheckedRadioButtonId()
+            int typeId = rg.getCheckedRadioButtonId();
+            String qType = ((typeId == R.id.radio_show) ? "show" : "artist");
+
+//            InputMethodManager inputMethodManager = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
+//            inputMethodManager.hideSoftInputFromWindow(v.getApplicationWindowToken(), 0);
+            Retrofit retrofit = new Retrofit.Builder()
+                    .baseUrl(SPOTIFY_BASE_API)
+                    .addConverterFactory(GsonConverterFactory.create())
+                    .build();
+            APIInterface apiInterface1 = retrofit.create(APIInterface.class);
+
+//                    Call<ShowsJson> call = apiInterface1.searchSpotify("Bearer " + accessToken, searchText, "show", "10" );
+            //Call<ShowsJson> call = apiInterface1.searchSpotify("Bearer " + accessToken, searchText, "show", "20", "US");
+            if (qType.equals("show")) {
+                Call<ShowsJson> call = apiInterface1.searchSpotify("Bearer " + accessToken, searchText, qType, "50", "US");
+                call.enqueue(new Callback<ShowsJson>() {
+                    @Override
+                    public void onResponse(Call<ShowsJson> call, Response<ShowsJson> response) {
+                        ShowsJson shows = response.body();
+                        ListView listView = findViewById(R.id.resList);
+
+                        items = shows.getShows().getItemsList();
+                        List<String> images = new ArrayList<>();
+                        List<String> namesList = new ArrayList<>();
+                        for (ShowsJson.Shows.Item item : items) {
+
+                            String urlString = item.getImageList().get(1).getUrl();
+                            images.add(urlString);
+                            namesList.add(item.getName());
+                        }
+                        SearchResultsListAdapter adapter = new SearchResultsListAdapter(MainActivity.this, images, namesList);
+                        listView.setAdapter(adapter);
+
+                        listView.setOnItemClickListener((parent, view, position, id) -> {
+                            Intent intent = new Intent(view.getContext(), SelectedItemScreen.class);
+                            ShowsJson.Shows.Item item = items.get(position);
+
+                            String[] selectedItemValues = new String[6];
+
+                            selectedItemValues[0] = item.getName();
+                            selectedItemValues[1] = item.getDescription();
+                            selectedItemValues[2] = item.getImageList().get(1).getUrl();
+                            selectedItemValues[3] = item.getId();
+                            selectedItemValues[4] = "show";
+                            selectedItemValues[5] = accessToken;
+
+                            intent.putExtra("selectedItemValues", selectedItemValues);
+                            startActivity(intent);
+                        });
+
+                        ImageView imageView = findViewById(R.id.gifPlaceMain);
+                        if (imageView != null) {
+                            imageView.setVisibility(View.INVISIBLE);
+                            LinearLayout linearLayout = findViewById(R.id.linLayoutMain);
+                            linearLayout.removeView(imageView);
+                        }
+                        listView.setVisibility(View.VISIBLE);
+                    }
+
+
+                    @Override
+                    public void onFailure(Call<ShowsJson> call, Throwable t) {
+                        call.cancel();
+
+                    }
+                });
+            } else if (qType.equals("artist")) {
+                Call<ArtistJson> call = apiInterface1.searchForArtist("Bearer " + accessToken, searchText, qType, "20", "US");
+                call.enqueue(new Callback<ArtistJson>() {
+                    @Override
+                    public void onResponse(Call<ArtistJson> call, Response<ArtistJson> response) {
+                        ArtistJson artistJson = response.body();
+                        ListView listView = findViewById(R.id.resList);
+
+                        artistItems  = artistJson.getArtists().getItemsList();
+                        List<String> images = new ArrayList<>();
+                        List<String> namesList = new ArrayList<>();
+                        for (ArtistJson.Artist.ArtistItem item : artistItems) {
+                            String urlString = "" ;
+                            if (item.getImageList() != null && item.getImageList().size() > 1) {
+                                urlString = item.getImageList().get(1).getUrl();
+                            } else if (item.getImageList().size() == 1) {
+                                urlString = item.getImageList().get(0).getUrl();
+                            } else {// TBD - no image found
+
+                            }
+
+                            images.add(urlString);
+                            namesList.add(item.getName());
+                        }
+                        SearchResultsListAdapter adapter = new SearchResultsListAdapter(MainActivity.this, images, namesList);
+                        listView.setAdapter(adapter);
+                        listView.setOnItemClickListener((parent, view, position, id) -> {
+                            Intent intent = new Intent(view.getContext(), SelectedItemScreen.class);
+                            ArtistJson.Artist.ArtistItem item = artistItems.get(position);
+
+                            String[] selectedItemValues = new String[6];
+
+                            selectedItemValues[0] = item.getName();
+                            selectedItemValues[1] = "";
+                            selectedItemValues[2] = item.getImageList().get(1).getUrl();
+                            selectedItemValues[3] = item.getId();
+                            selectedItemValues[4] = "artist";
+                            selectedItemValues[5] = accessToken;
+                            intent.putExtra("selectedItemValues", selectedItemValues);
+                            startActivity(intent);
+                        });
+                        ImageView imageView = findViewById(R.id.gifPlaceMain);
+                        if (imageView != null) {
+                            imageView.setVisibility(View.INVISIBLE);
+                            LinearLayout linearLayout = findViewById(R.id.linLayoutMain);
+                            linearLayout.removeView(imageView);
+
+                        }
+                        listView.setVisibility(View.VISIBLE);
+                    }
+
+
+                    @Override
+                    public void onFailure(Call<ArtistJson> call, Throwable t) {
+                        call.cancel();
+
+                    }
+                });
+
+            }
+        }
+    }
+
 
 
     @Override
@@ -388,40 +618,72 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
     @Override
     public boolean onNavigationItemSelected(@NonNull MenuItem item) {
-        switch (item.getItemId()) {
-            case R.id.nav_shows:
-                Intent intent = new Intent(getApplicationContext(), MyCollection.class);
 
-                String[] selectedItemValues = new String[1];
+        if (item.getItemId() == R.id.nav_shows) {
+            Intent intent = new Intent(getApplicationContext(), MyCollection.class);
 
-                selectedItemValues[0] = "show";
+            String[] selectedItemValues = new String[2];
 
-                intent.putExtra("selectedItemValues", selectedItemValues);
-                startActivity(intent);
+            selectedItemValues[0] = "show";
+            selectedItemValues[1] = accessToken;
+            intent.putExtra("selectedItemValues", selectedItemValues);
+            startActivity(intent);
+        } else if (item.getItemId() == R.id.nav_artists) {
+            NoteUtil.getlog(getApplicationContext());
+            Intent intent1 = new Intent(getApplicationContext(), MyCollection.class);
+            String[] selectedItemValues1 = new String[2];
 
-                startActivity(intent);
-                break;
+            selectedItemValues1[0] = "artist";
+            selectedItemValues1[1] = accessToken;
 
-            case R.id.nav_artists:
-                NoteUtil.getlog(getApplicationContext());
-                Intent intent1 = new Intent(getApplicationContext(), MyCollection.class);
-                String[] selectedItemValues1 = new String[1];
-
-                selectedItemValues1[0] = "show";
-
-                intent1.putExtra("selectedItemValues", selectedItemValues1);
-                startActivity(intent1);
-                break;
-            case R.id.showLog:
-                NoteUtil.getlog(getApplicationContext());
-                Intent intent2 = new Intent(getApplicationContext(), printAllData.class);
-                startActivity(intent2);
-                break;
-
-
-            case R.id.about:
-                break;
+            intent1.putExtra("selectedItemValues", selectedItemValues1);
+            startActivity(intent1);
+//        } else if ( item.getItemId() == R.id.showLog) {
+//            NoteUtil.getlog(getApplicationContext());
+//            Intent intent2 = new Intent(getApplicationContext(), printAllData.class);
+//            startActivity(intent2);
+        } else if ( item.getItemId() == R.id.about) {
+            Intent intent2 = new Intent(getApplicationContext(), AboutPage.class);
+             startActivity(intent2);
         }
+
+
+
+//        switch (item.getItemId()) {
+//            case R.id.nav_shows:
+//                Intent intent = new Intent(getApplicationContext(), MyCollection.class);
+//
+//                String[] selectedItemValues = new String[2];
+//
+//                selectedItemValues[0] = "show";
+//                selectedItemValues[1] = accessToken;
+//                intent.putExtra("selectedItemValues", selectedItemValues);
+//                startActivity(intent);
+//
+//                startActivity(intent);
+//                break;
+//
+//            case R.id.nav_artists:
+//                NoteUtil.getlog(getApplicationContext());
+//                Intent intent1 = new Intent(getApplicationContext(), MyCollection.class);
+//                String[] selectedItemValues1 = new String[2];
+//
+//                selectedItemValues1[0] = "artist";
+//                selectedItemValues1[1] = accessToken;
+//
+//                intent1.putExtra("selectedItemValues", selectedItemValues1);
+//                startActivity(intent1);
+//                break;
+//            case R.id.showLog:
+//                NoteUtil.getlog(getApplicationContext());
+//                Intent intent2 = new Intent(getApplicationContext(), printAllData.class);
+//                startActivity(intent2);
+//                break;
+//
+//
+//            case R.id.about:
+//                break;
+//        }
         return true;
     }
 

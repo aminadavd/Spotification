@@ -9,53 +9,86 @@
     tools:context=".MainActivity">
 
     <LinearLayout
+        android:id="@+id/mainLayout2"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_marginTop="60dp"
+        android:background="@color/black"
         android:orientation="vertical"
         app:layout_constraintTop_toTopOf="parent"
         tools:layout_editor_absoluteX="0dp">
 
         <androidx.appcompat.widget.Toolbar
+            android:id="@+id/mainToolbar"
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
-            android:id="@+id/mainToolbar"
-            android:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar"/>
+            android:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar" />
 
-        <EditText
+        <SearchView
             android:id="@+id/searchText"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+
             android:ems="10"
-            android:inputType="text" />
+            android:inputType="text"
+            android:shadowColor="@color/white"
+            android:textColor="@color/white"
+            android:outlineSpotShadowColor="@color/white"
+            android:backgroundTint="@color/white"
+            android:queryHint="Search in spotify... "
+            android:iconifiedByDefault="false"
+            android:requiresFadingEdge="horizontal"
+            />
+
+<!--        <EditText-->
+<!--            android:id="@+id/searchText"-->
+<!--            android:layout_width="match_parent"-->
+<!--            android:layout_height="wrap_content"-->
+<!--            android:ems="10"-->
+<!--            android:inputType="text"-->
+<!--            android:shadowColor="@color/white"-->
+<!--            android:textColor="@color/white"-->
+<!--            android:outlineSpotShadowColor="@color/white"-->
+<!--            android:backgroundTint="@color/white"-->
+<!--            android:hint="Search in spotify"/>-->
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal">
 
-            <Button
-                android:id="@+id/searchButton"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Search" />
+<!--            <Button-->
+<!--                android:id="@+id/searchButton"-->
+<!--                android:layout_width="107dp"-->
+<!--                android:layout_height="wrap_content"-->
+<!--                android:text="Search"-->
+<!--                android:textColor="@color/white"/>-->
 
             <RadioGroup
+                android:id="@+id/typeGroup"
                 android:layout_width="272dp"
                 android:layout_height="match_parent"
-                android:orientation="horizontal"
-                android:id="@+id/typeGroup">
-            <RadioButton android:id="@+id/radio_show"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Show"
-                android:checked="true"
-                android:onClick="onRadioButtonClicked"/>
-            <RadioButton android:id="@+id/radio_artist"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Artist"
-                android:onClick="onRadioButtonClicked"/>
+
+                android:orientation="horizontal">
+
+                <RadioButton
+                    android:id="@+id/radio_show"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:checked="true"
+                    android:onClick="onRadioButtonClicked"
+                    android:buttonTint="@color/white"
+                    android:textColor="@color/white"
+                    android:text="Show" />
+
+                <RadioButton
+                    android:id="@+id/radio_artist"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:onClick="onRadioButtonClicked"
+                    android:buttonTint="@color/white"
+                    android:textColor="@color/white"
+                    android:text="Artist" />
             </RadioGroup>
 
             <!--   <Button
@@ -67,28 +100,35 @@
         </LinearLayout>
 
         <LinearLayout
+            android:id="@+id/linLayoutMain"
             android:layout_width="match_parent"
             android:layout_height="fill_parent"
             android:orientation="vertical">
 
             <com.google.android.gms.ads.AdView
                 android:id="@+id/adView"
-                android:layout_width="match_parent"
-                android:layout_height="40dp"
+                android:layout_width="fill_parent"
+                android:layout_height="55dp"
                 android:layout_alignParentBottom="true"
                 android:layout_centerHorizontal="true"
                 app:adSize="BANNER"
-                app:adUnitId="ca-app-pub-3940256099942544/6300978111"></com.google.android.gms.ads.AdView>
+                app:adUnitId="ca-app-pub-1171969261272427/1373141241">
+            </com.google.android.gms.ads.AdView>
+
+            <ImageView
+                android:id="@+id/gifPlaceMain"
+                android:layout_width="240dp"
+                android:layout_height="240dp"
+                android:layout_gravity="center"
+                android:visibility="invisible"/>
 
             <ListView
-
                 android:id="@+id/resList"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:background="@color/black"
-                android:visibility="visible">
-
-            </ListView>
+                android:clickable="true"
+                android:visibility="invisible"
+               />
 
         </LinearLayout>
 
@@ -97,7 +137,7 @@
 
     <com.google.android.material.navigation.NavigationView
         android:id="@+id/nav_view"
-        android:layout_width="wrap_content"
+        android:layout_width="176dp"
         android:layout_height="match_parent"
         android:layout_gravity="start"
         android:visibility="invisible"
