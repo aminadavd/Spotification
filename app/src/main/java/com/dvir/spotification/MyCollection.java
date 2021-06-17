@@ -109,13 +109,15 @@ public class MyCollection  extends AppCompatActivity {
         List<String> namesList = new ArrayList<>();
 
         pojo = NoteUtil.getData(context);
+        if (pojo != null) {
+            for (Item item : pojo.getItemsList()) {
+                if (item.getType().equals(type)) {
+                    String urlString = item.getHref();
+                    images.add(urlString);
+                    namesList.add(item.getName());
+                    itemList.add(item);
+                }
 
-        for (Item item : pojo.getItemsList()) {
-            if (item.getType().equals(type) ) {
-                String urlString = item.getHref();
-                images.add(urlString);
-                namesList.add(item.getName());
-                itemList.add(item);
             }
         }
         ListView listView = findViewById(R.id.myShows);

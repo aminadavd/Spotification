@@ -94,34 +94,39 @@ public class NoteUtil {
             File filesDir = context.getFilesDir();
 
             File gpxfile = new File(filesDir, fileName);
-        StringBuffer  data = new StringBuffer();
-        InputStream is = null;
-        try {
-            is = new FileInputStream(gpxfile);
+            if (gpxfile.exists()) {
+                StringBuffer data = new StringBuffer();
+                InputStream is = null;
+                try {
+                    is = new FileInputStream(gpxfile);
 
-             BufferedReader br = new BufferedReader(new InputStreamReader(is));
+                    BufferedReader br = new BufferedReader(new InputStreamReader(is));
 
-            String readLine = null;
-            try {
-                while ((readLine = br.readLine()) != null) {
-                    data.append(readLine);
+                    String readLine = null;
+                    try {
+                        while ((readLine = br.readLine()) != null) {
+                            data.append(readLine);
+                        }
+
+                        // Close the InputStream and BufferedReader
+                        is.close();
+                        br.close();
+
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                    ;
+
+
+                } catch (FileNotFoundException e) {
+                    e.printStackTrace();
                 }
-
-                // Close the InputStream and BufferedReader
-                is.close();
-                br.close();
-
-            } catch (IOException e) {
-                e.printStackTrace();
-            };
-
-
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        }
-            Gson gson = new Gson();
-            SpotifyItemPOJO pojo = gson.fromJson(data.toString(), SpotifyItemPOJO.class);
-            return  pojo;
+                Gson gson = new Gson();
+                SpotifyItemPOJO pojo = gson.fromJson(data.toString(), SpotifyItemPOJO.class);
+                return pojo;
+            } else {
+                return null;
+            }
     }
 
     public static boolean replaceOne(Context context, Item item){
